@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Voice Query</title>
 
 <style>
@@ -18,24 +18,24 @@
   }
 
   .card {
-    width: 320px;
-    padding: 24px;
-    border-radius: 16px;
+    width: 340px;
+    padding: 26px;
+    border-radius: 18px;
     background: #020617;
     box-shadow: 0 25px 40px rgba(0,0,0,.6);
     text-align: center;
   }
 
   h1 {
-    font-size: 1.1rem;
-    margin-bottom: 16px;
+    font-size: 1.15rem;
+    margin-bottom: 18px;
   }
 
   button {
     width: 100%;
     padding: 14px;
     font-size: 1rem;
-    border-radius: 12px;
+    border-radius: 14px;
     border: none;
     cursor: pointer;
     background: #2563eb;
@@ -53,14 +53,14 @@
   }
 
   .status {
-    margin-top: 10px;
+    margin-top: 12px;
     font-size: .85rem;
     color: #9ca3af;
   }
 
   audio {
     width: 100%;
-    margin-top: 16px;
+    margin-top: 18px;
     display: none;
   }
 
@@ -93,8 +93,10 @@ btn.addEventListener("click", async () => {
   try {
     if (!recorder || recorder.state === "inactive") {
 
+      // Request microphone access (HTTPS required)
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
+      // Cross-browser MIME support
       const mimeType =
         MediaRecorder.isTypeSupported("audio/webm")
           ? "audio/webm"
@@ -113,7 +115,10 @@ btn.addEventListener("click", async () => {
 
         const blob = new Blob(chunks, { type: mimeType });
         const form = new FormData();
-        form.append("audio", blob, "voice");
+
+        // IMPORTANT: filename MUST have a valid extension
+        const extension = mimeType === "audio/webm" ? "webm" : "m4a";
+        form.append("audio", blob, `voice.${extension}`);
 
         const response = await fetch(
           "https://gurukulolympiad.app.n8n.cloud/webhook/voice-query",
@@ -129,6 +134,7 @@ btn.addEventListener("click", async () => {
           return;
         }
 
+        // Expecting audio response from n8n
         const audioBlob = await response.blob();
         player.src = URL.createObjectURL(audioBlob);
         player.classList.add("active");
@@ -149,8 +155,8 @@ btn.addEventListener("click", async () => {
       btn.classList.remove("recording");
     }
   } catch (err) {
-    status.textContent = "Microphone permission denied";
     console.error(err);
+    status.textContent = "Microphone permission denied";
   }
 });
 </script>
