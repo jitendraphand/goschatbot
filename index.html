@@ -2,62 +2,59 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Voice Input</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Voice Query</title>
 
 <style>
   body {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: linear-gradient(135deg, #0f172a, #020617);
-    color: #e5e7eb;
+    margin: 0;
     height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: linear-gradient(135deg, #020617, #0f172a);
+    font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    color: #e5e7eb;
   }
 
   .card {
-    background: #020617;
-    border-radius: 16px;
-    padding: 28px 24px;
     width: 320px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    padding: 24px;
+    border-radius: 16px;
+    background: #020617;
+    box-shadow: 0 25px 40px rgba(0,0,0,.6);
     text-align: center;
   }
 
   h1 {
     font-size: 1.1rem;
     margin-bottom: 16px;
-    font-weight: 600;
   }
 
   button {
     width: 100%;
-    border: none;
     padding: 14px;
     font-size: 1rem;
     border-radius: 12px;
+    border: none;
+    cursor: pointer;
     background: #2563eb;
     color: white;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  button:hover {
-    background: #1d4ed8;
+    transition: background .2s;
   }
 
   button.recording {
     background: #dc2626;
   }
 
-  button.recording:hover {
-    background: #b91c1c;
+  button:disabled {
+    opacity: .6;
+    cursor: not-allowed;
   }
 
   .status {
     margin-top: 10px;
-    font-size: 0.85rem;
+    font-size: .85rem;
     color: #9ca3af;
   }
 
@@ -74,59 +71,88 @@
 </head>
 
 <body>
-  <div class="card">
-    <h1>🎙️ Voice Input</h1>
+<div class="card">
+  <h1>🎙️ Voice Query</h1>
 
-    <button id="rec">Speak</button>
-    <div class="status" id="status">Tap to start recording</div>
+  <button id="rec">Start Recording</button>
+  <div class="status" id="status">Tap to speak</div>
 
-    <audio id="player" controls></audio>
-  </div>
+  <audio id="player" controls></audio>
+</div>
 
 <script>
-let recorder, chunks = [], stream;
+let recorder;
+let chunks = [];
+let stream;
 
 const btn = document.getElementById("rec");
 const status = document.getElementById("status");
 const player = document.getElementById("player");
 
-btn.onclick = async function () {
-  if (!recorder || recorder.state === "inactive") {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    recorder = new MediaRecorder(stream);
-    chunks = [];
+btn.addEventListener("click", async () => {
+  try {
+    if (!recorder || recorder.state === "inactive") {
 
-    recorder.ondataavailable = e => chunks.push(e.data);
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-    recorder.onstop = async () => {
-      const blob = new Blob(chunks, { type: "audio/wav" });
-      const form = new FormData();
-      form.append("audio", blob);
+      const mimeType =
+        MediaRecorder.isTypeSupported("audio/webm")
+          ? "audio/webm"
+          : "audio/mp4";
 
-      status.textContent = "Processing…";
+      recorder = new MediaRecorder(stream, { mimeType });
+      chunks = [];
 
-      const res = await fetch("https://gurukulolympiad.app.n8n.cloud/webhook/voice-query", {
-        method: "POST",
-        body: form
-      });
+      recorder.ondataavailable = e => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
 
-      const audioBlob = await res.blob();
-      player.src = URL.createObjectURL(audioBlob);
-      player.classList.add("active");
-      status.textContent = "Playback ready";
-    };
+      recorder.onstop = async () => {
+        status.textContent = "Processing...";
+        btn.disabled = true;
 
-    recorder.start();
-    btn.textContent = "Stop";
-    btn.classList.add("recording");
-    status.textContent = "Recording…";
-  } else {
-    recorder.stop();
-    stream.getTracks().forEach(t => t.stop());
-    btn.textContent = "Speak";
-    btn.classList.remove("recording");
+        const blob = new Blob(chunks, { type: mimeType });
+        const form = new FormData();
+        form.append("audio", blob, "voice");
+
+        const response = await fetch(
+          "https://gurukulolympiad.app.n8n.cloud/webhook/voice-query",
+          {
+            method: "POST",
+            body: form
+          }
+        );
+
+        if (!response.ok) {
+          status.textContent = "Server error";
+          btn.disabled = false;
+          return;
+        }
+
+        const audioBlob = await response.blob();
+        player.src = URL.createObjectURL(audioBlob);
+        player.classList.add("active");
+
+        status.textContent = "Response ready";
+        btn.disabled = false;
+      };
+
+      recorder.start();
+      btn.textContent = "Stop Recording";
+      btn.classList.add("recording");
+      status.textContent = "Recording...";
+
+    } else {
+      recorder.stop();
+      stream.getTracks().forEach(t => t.stop());
+      btn.textContent = "Start Recording";
+      btn.classList.remove("recording");
+    }
+  } catch (err) {
+    status.textContent = "Microphone permission denied";
+    console.error(err);
   }
-};
+});
 </script>
 </body>
 </html>
