@@ -1,10 +1,96 @@
-<button id="rec">Speak</button>
-<audio id="player" controls></audio>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Voice Input</title>
+
+<style>
+  body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, #0f172a, #020617);
+    color: #e5e7eb;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card {
+    background: #020617;
+    border-radius: 16px;
+    padding: 28px 24px;
+    width: 320px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+    font-weight: 600;
+  }
+
+  button {
+    width: 100%;
+    border: none;
+    padding: 14px;
+    font-size: 1rem;
+    border-radius: 12px;
+    background: #2563eb;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  button:hover {
+    background: #1d4ed8;
+  }
+
+  button.recording {
+    background: #dc2626;
+  }
+
+  button.recording:hover {
+    background: #b91c1c;
+  }
+
+  .status {
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: #9ca3af;
+  }
+
+  audio {
+    width: 100%;
+    margin-top: 16px;
+    display: none;
+  }
+
+  audio.active {
+    display: block;
+  }
+</style>
+</head>
+
+<body>
+  <div class="card">
+    <h1>🎙️ Voice Input</h1>
+
+    <button id="rec">Speak</button>
+    <div class="status" id="status">Tap to start recording</div>
+
+    <audio id="player" controls></audio>
+  </div>
 
 <script>
 let recorder, chunks = [], stream;
 
-document.getElementById("rec").onclick = async function () {
+const btn = document.getElementById("rec");
+const status = document.getElementById("status");
+const player = document.getElementById("player");
+
+btn.onclick = async function () {
   if (!recorder || recorder.state === "inactive") {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     recorder = new MediaRecorder(stream);
@@ -17,22 +103,30 @@ document.getElementById("rec").onclick = async function () {
       const form = new FormData();
       form.append("audio", blob);
 
-      const res = await fetch("https://gurukulolympiad.app.n8n.cloud/webhook/voice-query", {
+      status.textContent = "Processing…";
+
+      const res = await fetch("https://xxxxxxxx.app.n8n.cloud/webhook/voice-query", {
         method: "POST",
         body: form
       });
 
       const audioBlob = await res.blob();
-      document.getElementById("player").src =
-        URL.createObjectURL(audioBlob);
+      player.src = URL.createObjectURL(audioBlob);
+      player.classList.add("active");
+      status.textContent = "Playback ready";
     };
 
     recorder.start();
-    this.textContent = "Stop";
+    btn.textContent = "Stop";
+    btn.classList.add("recording");
+    status.textContent = "Recording…";
   } else {
     recorder.stop();
     stream.getTracks().forEach(t => t.stop());
-    this.textContent = "Speak";
+    btn.textContent = "Speak";
+    btn.classList.remove("recording");
   }
 };
 </script>
+</body>
+</html>
