@@ -3,48 +3,59 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Voice Query</title>
+<title>Gurukul Voice Assistant</title>
 
 <style>
   body {
     margin: 0;
     height: 100vh;
+    background: #f4f6fb;
+    font-family: "Segoe UI", system-ui, sans-serif;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #020617, #0f172a);
-    font-family: system-ui, -apple-system, Segoe UI, sans-serif;
-    color: #e5e7eb;
   }
 
   .card {
-    width: 340px;
-    padding: 26px;
-    border-radius: 18px;
-    background: #020617;
-    box-shadow: 0 25px 40px rgba(0,0,0,.6);
+    width: 360px;
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 15px 35px rgba(0,0,0,.15);
+    padding: 24px;
     text-align: center;
+    border-top: 6px solid #1f3faa;
+  }
+
+  .logo {
+    width: 160px;
+    margin-bottom: 14px;
   }
 
   h1 {
-    font-size: 1.15rem;
-    margin-bottom: 18px;
+    font-size: 1.05rem;
+    color: #1f3faa;
+    margin-bottom: 16px;
+    font-weight: 600;
   }
 
   button {
     width: 100%;
     padding: 14px;
     font-size: 1rem;
-    border-radius: 14px;
+    border-radius: 10px;
     border: none;
     cursor: pointer;
-    background: #2563eb;
+    background: #1f3faa;
     color: white;
-    transition: background .2s;
+    transition: background .2s ease;
+  }
+
+  button:hover {
+    background: #16318a;
   }
 
   button.recording {
-    background: #dc2626;
+    background: #c62828;
   }
 
   button:disabled {
@@ -53,31 +64,45 @@
   }
 
   .status {
-    margin-top: 12px;
+    margin-top: 10px;
     font-size: .85rem;
-    color: #9ca3af;
+    color: #555;
   }
 
   audio {
     width: 100%;
-    margin-top: 18px;
+    margin-top: 16px;
     display: none;
   }
 
   audio.active {
     display: block;
   }
+
+  .footer {
+    margin-top: 14px;
+    font-size: .75rem;
+    color: #888;
+  }
 </style>
 </head>
 
 <body>
+
 <div class="card">
-  <h1>🎙️ Voice Query</h1>
+  <!-- LOGO -->
+  <img src="logo.png" alt="Gurukul Olympiad School" class="logo" />
+
+  <h1>Voice Query Assistant</h1>
 
   <button id="rec">Start Recording</button>
   <div class="status" id="status">Tap to speak</div>
 
   <audio id="player" controls></audio>
+
+  <div class="footer">
+    Gurukul Olympiad School
+  </div>
 </div>
 
 <script>
@@ -93,10 +118,8 @@ btn.addEventListener("click", async () => {
   try {
     if (!recorder || recorder.state === "inactive") {
 
-      // Request microphone access (HTTPS required)
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      // Cross-browser MIME support
       const mimeType =
         MediaRecorder.isTypeSupported("audio/webm")
           ? "audio/webm"
@@ -116,7 +139,6 @@ btn.addEventListener("click", async () => {
         const blob = new Blob(chunks, { type: mimeType });
         const form = new FormData();
 
-        // IMPORTANT: filename MUST have a valid extension
         const extension = mimeType === "audio/webm" ? "webm" : "m4a";
         form.append("audio", blob, `voice.${extension}`);
 
@@ -134,7 +156,6 @@ btn.addEventListener("click", async () => {
           return;
         }
 
-        // Expecting audio response from n8n
         const audioBlob = await response.blob();
         player.src = URL.createObjectURL(audioBlob);
         player.classList.add("active");
@@ -160,5 +181,6 @@ btn.addEventListener("click", async () => {
   }
 });
 </script>
+
 </body>
 </html>
